@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Çalışan Yönetim Paneli 3.0</title>
+  
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Çalışan Yönetimi</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="container mx-auto p-4">
+    <!-- Ayarlar simgesi ve menüsü -->
+    <div class="flex justify-end mb-4">
+      <div class="relative inline-block text-left">
+        <button
+          id="ayarlarBtn"
+          aria-haspopup="true"
+          aria-expanded="true"
+          class="focus:outline-none"
+          title="Ayarlar"
+          type="button"
+        >
+          <!-- Ayarlar simgesi (dişli çark) SVG -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 text-gray-600 hover:text-gray-800"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 8c-1.104 0-2 .896-2 2s.896 2 2 2 2-.896 2-2-.896-2-2-2zm0 10c-4.418 0-8-1.79-8-4v-4c0-2.21 3.582-4 8-4s8 1.79 8 4v4c0 2.21-3.582 4-8 4z"
+            />
+          </svg>
+        </button>
+        <div
+          id="ayarlarMenu"
+          class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-10"
+        >
+          <button
+            id="tamamiSilBtn"
+            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100"
+            type="button"
+          >
+            Çalışan Listesinin Tamamını Sil
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Excel Yükleme -->
+    <div class="mb-6 bg-white p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-bold mb-4">Excel Yükleme</h2>
+      <input
+        type="file"
+        id="excelFile"
+        accept=".xlsx, .xls"
+        class="mb-4 w-full p-2 border rounded"
+      />
+      <button
+        id="yukleBtn"
+        class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 w-full"
+      >
+        Yükle
+      </button>
+    </div>
+
+    <!-- Yeni Çalışan Ekleme -->
+    <div class="mb-6 bg-white p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-bold mb-4">Yeni Çalışan Ekle</h2>
+      <form id="yeniCalisanForm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block mb-1">Ad-Soyad:</label>
+            <input
+              type="text"
+              id="adSoyad"
+              class="w-full p-2 border rounded"
+              required
+            />
+          </div>
+          <div>
+            <label class="block mb-1">Bölüm:</label>
+            <input
+              type="text"
+              id="bolum"
+              class="w-full p-2 border rounded"
+              required
+            />
+          </div>
+          <div>
+            <label class="block mb-1">Çalışma Saatleri:</label>
+            <input
+              type="text"
+              id="calismaSaatleri"
+              class="w-full p-2 border rounded"
+              required
+            />
+          </div>
+          <div>
+            <label class="block mb-1">Durum:</label>
+            <select
+              id="durum"
+              class="w-full p-2 border rounded"
+              required
+            >
+              <option value="çalışıyor">çalışıyor</option>
+              <option value="izinli">izinli</option>
+            </select>
+          </div>
+        </div>
+        <button
+          type="submit"
+          class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 w-full"
+        >
+          Ekle
+        </button>
+      </form>
+    </div>
+
+    <!-- Filtreleme -->
+    <div class="mb-6 bg-white p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-bold mb-4">Filtreleme</h2>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block mb-1">Bölüm:</label>
+          <select id="bolumFiltre" class="w-full p-2 border rounded">
+            <option value="">Tüm Bölümler</option>
+          </select>
+        </div>
+        <div>
+          <label class="block mb-1">Çalışma Saatleri:</label>
+          <input
+            type="text"
+            id="saatFiltre"
+            class="w-full p-2 border rounded"
+            placeholder="Örn: 09:00 - 17:00"
+          />
+        </div>
+        <div>
+          <label class="block mb-1">Durum:</label>
+          <select id="durumFiltre" class="w-full p-2 border rounded">
+            <option value="">Tüm Durumlar</option>
+            <option value="çalışıyor">çalışıyor</option>
+            <option value="izinli">izinli</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button
+            onclick="tumunuGoster()"
+            class="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+            type="button"
+          >
+            Tümünü Göster
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raporlama -->
+    <div class="mb-6 bg-white p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-bold mb-4">Çalışan Durum Raporları</h2>
+      <button
+        id="raporOlusturBtn"
+        class="bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700 w-full mb-4"
+      >
+        Rapor Oluştur
+      </button>
+      <div
+        id="raporSonuclari"
+        class="grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
+        <!-- Rapor sonuçları burada dinamik olarak gösterilecek -->
+      </div>
+    </div>
+
+    <!-- Çalışan Listesi -->
+    <div
+      class="bg-white p-6 rounded-lg shadow-lg overflow-x-auto"
+    >
+      <h2 class="text-xl font-bold mb-4">Çalışan Listesi</h2>
+      <table id="calisanListesi" class="w-full text-left">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="p-2">Ad-Soyad</th>
+            <th class="p-2">Bölüm</th>
+            <th class="p-2">Çalışma Saatleri</th>
+            <th class="p-2">Durum</th>
+            <th class="p-2">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Çalışanlar buraya dinamik olarak eklenecek -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let calisanlar = JSON.parse(localStorage.getItem("calisanlar")) || [];
+
+    // Ayarlar menüsünü aç/kapa
+    document
+      .getElementById("ayarlarBtn")
+      .addEventListener("click", function () {
+        const menu = document.getElementById("ayarlarMenu");
+        menu.classList.toggle("hidden");
+      });
+
+    // Tamamını sil butonuna tıklanınca onayla ve sil
+    document
+      .getElementById("tamamiSilBtn")
+      .addEventListener("click", function () {
+        if (
+          confirm("Çalışan Listesinin Tamamını silmek istiyor musunuz?")
+        ) {
+          calisanlar = [];
+          localStorage.setItem("calisanlar", JSON.stringify(calisanlar));
+          renderCalisanlar();
+          updateBolumFiltre();
+        }
+        // Menü kapansın
+        document.getElementById("ayarlarMenu").classList.add("hidden");
+      });
+
+    // Excel yükleme
+    document.getElementById("yukleBtn").addEventListener("click", function () {
+      const file = document.getElementById("excelFile").files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(sheet);
+          const basliklar = Object.keys(json[0]);
+          calisanlar = json.map((row) => ({
+            adSoyad: row[basliklar[0]] || "",
+            bolum: row[basliklar[1]] || "",
+            calismaSaatleri: row[basliklar[2]] || "",
+            durum: "çalışıyor", // Varsayılan olarak "çalışıyor" olarak ayarla
+          }));
+          localStorage.setItem("calisanlar", JSON.stringify(calisanlar));
+          renderCalisanlar();
+          updateBolumFiltre();
+
+          // Excel'de "izinli" olanları kontrol et
+          const izinliler = json.filter(
+            (row) => (row[basliklar[3]] || "").toLowerCase() === "izinli"
+          );
+          if (izinliler.length > 0) {
+            alert(
+              `${izinliler.length} çalışan izinli olarak işaretlenmiş. Lütfen durumlarını manuel olarak güncelleyin.`
+            );
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+
+    // Yeni çalışan ekleme
+    document
+      .getElementById("yeniCalisanForm")
+      .addEventListener("submit", function (e) {
+        e.preventDefault();
+        const adSoyad = document.getElementById("adSoyad").value;
+        const bolum = document.getElementById("bolum").value;
+        const calismaSaatleri = document.getElementById("calismaSaatleri").value;
+        const durum = document.getElementById("durum").value.toLowerCase();
+        calisanlar.push({ adSoyad, bolum, calismaSaatleri, durum });
+        localStorage.setItem("calisanlar", JSON.stringify(calisanlar));
+        renderCalisanlar();
+        updateBolumFiltre();
+        this.reset();
+      });
+
+    // Filtreleme
+    document.getElementById("bolumFiltre").addEventListener("change", renderCalisanlar);
+    document.getElementById("saatFiltre").addEventListener("input", renderCalisanlar);
+    document.getElementById("durumFiltre").addEventListener("change", renderCalisanlar);
+
+    // Çalışanları render etme
+    function renderCalisanlar() {
+      const tbody = document.querySelector("#calisanListesi tbody");
+      tbody.innerHTML = "";
+      const bolum = document.getElementById("bolumFiltre").value;
+      const saat = document.getElementById("saatFiltre").value.toLowerCase();
+      const durum = document.getElementById("durumFiltre").value.toLowerCase();
+
+      const filtrelenmisCalisanlar = calisanlar.filter((c) => {
+        const bolumFiltre = bolum ? c.bolum === bolum : true;
+        const saatFiltre = saat
+          ? c.calismaSaatleri.toLowerCase().includes(saat)
+          : true;
+        const durumFiltre = durum
+          ? c.durum.toLowerCase() === durum.toLowerCase()
+          : true;
+        return bolumFiltre && saatFiltre && durumFiltre;
+      });
+
+      filtrelenmisCalisanlar.forEach((calisan, index) => {
+        const durumRenk =
+          calisan.durum === "izinli" ? "text-yellow-600" : "text-green-600";
+        const row = `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2">${calisan.adSoyad}</td>
+                        <td class="p-2">${calisan.bolum}</td>
+                        <td class="p-2">${calisan.calismaSaatleri}</td>
+                        <td class="p-2 ${durumRenk} font-medium">${calisan.durum}</td>
+                        <td class="p-2 space-x-2">
+                            <button onclick="duzenleCalisan(${index})" class="bg-yellow-500 text-white py-1 px-3 rounded hover:bg-yellow-600">Düzenle</button>
+                            <button onclick="silCalisan(${index})" class="bg-red-600 text-white py-1 px-3 rounded hover:bg-red-700">Sil</button>
+                        </td>
+                    </tr>
+                `;
+        tbody.innerHTML += row;
+      });
+    }
+
+    // Tümünü göster
+    function tumunuGoster() {
+      document.getElementById("bolumFiltre").value = "";
+      document.getElementById("saatFiltre").value = "";
+      document.getElementById("durumFiltre").value = "";
+      renderCalisanlar();
+    }
+
+    // Çalışan düzenleme
+    function duzenleCalisan(index) {
+      const calisan = calisanlar[index];
+      document.getElementById("adSoyad").value = calisan.adSoyad;
+      document.getElementById("bolum").value = calisan.bolum;
+      document.getElementById("calismaSaatleri").value = calisan.calismaSaatleri;
+      document.getElementById("durum").value = calisan.durum;
+      calisanlar.splice(index, 1);
+      localStorage.setItem("calisanlar", JSON.stringify(calisanlar));
+      renderCalisanlar();
+      updateBolumFiltre();
+    }
+
+    // Çalışan silme
+    function silCalisan(index) {
+      if (
+        confirm(`${calisanlar[index].adSoyad} çalışanını silmek istediğinize emin misiniz?`)
+      ) {
+        calisanlar.splice(index, 1);
+        localStorage.setItem("calisanlar", JSON.stringify(calisanlar));
+        renderCalisanlar();
+        updateBolumFiltre();
+      }
+    }
+
+    // Bölüm filtreleme seçeneklerini güncelleme
+    function updateBolumFiltre() {
+      const bolumler = [...new Set(calisanlar.map((c) => c.bolum))];
+      const select = document.getElementById("bolumFiltre");
+      select.innerHTML = '<option value="">Tüm Bölümler</option>';
+      bolumler.forEach((bolum) => {
+        select.innerHTML += `<option value="${bolum}">${bolum}</option>`;
+      });
+    }
+
+    // Rapor oluşturma butonu
+    document
+      .getElementById("raporOlusturBtn")
+      .addEventListener("click", function () {
+        const rapor = generateRapor();
+        renderRapor(rapor);
+      });
+
+    // Rapor verilerini hesaplama
+    function generateRapor() {
+      const toplamCalisan = calisanlar.length;
+      const calisiyorSayisi = calisanlar.filter(
+        (c) => c.durum === "çalışıyor"
+      ).length;
+      const izinliSayisi = calisanlar.filter(
+        (c) => c.durum === "izinli"
+      ).length;
+
+      // Bölümlere göre dağılım
+      const bolumRaporu = {};
+      calisanlar.forEach((calisan) => {
+        if (!bolumRaporu[calisan.bolum]) {
+          bolumRaporu[calisan.bolum] = { calisiyor: 0, izinli: 0 };
+        }
+        if (calisan.durum === "çalışıyor") {
+          bolumRaporu[calisan.bolum].calisiyor++;
+        } else {
+          bolumRaporu[calisan.bolum].izinli++;
+        }
+      });
+
+      return {
+        toplamCalisan,
+        calisiyorSayisi,
+        izinliSayisi,
+        bolumRaporu,
+      };
+    }
+
+    // Raporu ekranda gösterme
+    function renderRapor(rapor) {
+      const raporSonuclari = document.getElementById("raporSonuclari");
+      raporSonuclari.innerHTML = "";
+
+      // Genel istatistikler
+      raporSonuclari.innerHTML += `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-bold mb-2">Genel Durum</h3>
+                    <p>Toplam Çalışan: <span class="font-bold">${rapor.toplamCalisan}</span></p>
+                    <p class="text-green-600">Çalışan: ${rapor.calisiyorSayisi} (${(
+        (rapor.calisiyorSayisi / rapor.toplamCalisan) *
+        100
+      ).toFixed(1)}%)</p>
+                    <p class="text-yellow-600">İzinli: ${rapor.izinliSayisi} (${(
+        (rapor.izinliSayisi / rapor.toplamCalisan) *
+        100
+      ).toFixed(1)}%)</p>
+                </div>
+            `;
+
+      // Bölümlere göre rapor
+      raporSonuclari.innerHTML += `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-bold mb-2">Bölümlere Göre Dağılım</h3>
+                    <div class="max-h-60 overflow-y-auto">
+                        ${Object.entries(rapor.bolumRaporu)
+                          .map(
+                            ([bolum, veri]) => `
+                            <div class="mb-2">
+                                <p class="font-medium">${bolum || "Belirtilmemiş"}</p>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-green-600">Çalışan: ${veri.calisiyor}</span>
+                                    <span class="text-yellow-600">İzinli: ${veri.izinli}</span>
+                                </div>
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                </div>
+            `;
+
+      // Durum grafiği (sütun grafik)
+      raporSonuclari.innerHTML += `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-bold mb-2">Durum Grafiği</h3>
+                    <canvas id="durumGrafik"></canvas>
+                </div>
+            `;
+
+      // Bölüm bazlı dağılım (pasta grafik)
+      raporSonuclari.innerHTML += `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-bold mb-2">Bölüm Bazlı Dağılım</h3>
+                    <canvas id="bolumGrafik"></canvas>
+                </div>
+            `;
+
+      // Sütun grafik oluşturma
+      const durumCtx = document.getElementById("durumGrafik").getContext("2d");
+      new Chart(durumCtx, {
+        type: "bar",
+        data: {
+          labels: ["Çalışan", "İzinli"],
+          datasets: [
+            {
+              label: "Çalışan Durumu",
+              data: [rapor.calisiyorSayisi, rapor.izinliSayisi],
+              backgroundColor: ["#10B981", "#FBBF24"],
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+
+      // Pasta grafik oluşturma
+      const bolumCtx = document.getElementById("bolumGrafik").getContext("2d");
+      const bolumLabels = Object.keys(rapor.bolumRaporu);
+      const bolumData = bolumLabels.map(
+        (bolum) =>
+          rapor.bolumRaporu[bolum].calisiyor + rapor.bolumRaporu[bolum].izinli
+      );
+      new Chart(bolumCtx, {
+        type: "pie",
+        data: {
+          labels: bolumLabels,
+          datasets: [
+            {
+              label: "Bölüm Bazlı Dağılım",
+              data: bolumData,
+              backgroundColor: [
+                "#10B981",
+                "#FBBF24",
+                "#3B82F6",
+                "#EF4444",
+                "#8B5CF6",
+              ],
+              borderWidth: 1,
+            },
+          ],
+        },
+      });
+    }
+
+    // Sayfa yüklendiğinde çalışanları render et
+    renderCalisanlar();
+    updateBolumFiltre();
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</body>
+</html>
+<!-- partial -->
+  
+</body>
+</html>
